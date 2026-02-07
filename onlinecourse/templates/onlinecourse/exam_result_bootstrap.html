@@ -1,48 +1,56 @@
-{% extends 'onlinecourse/base_bootstrap.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% load static %}
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
 
-{% block content %}
+<nav class="navbar navbar-light bg-light">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'onlinecourse:index' %}">Online Course</a>
+
+        {% if user.is_authenticated %}
+            <div>
+                <span class="mr-3">{{ user.username }}</span>
+                <a href="{% url 'onlinecourse:logout' %}">Logout</a>
+            </div>
+        {% endif %}
+    </div>
+</nav>
+
 <div class="container mt-4">
 
-  <h2>Exam Results</h2>
-  <hr>
+    <h3>Exam Results</h3>
 
-  {% if grade > 80 %}
-  <div class="alert alert-success">
-      <strong>Congratulations!</strong> You passed the exam.
-  </div>
-  {% else %}
-  <div class="alert alert-danger">
-      <strong>Sorry!</strong> You did not pass. Try again.
-  </div>
-  <a class="btn btn-link text-danger"
-     href="{% url 'onlinecourse:course_detail' course.id %}">
-     Re-test
-  </a>
-  {% endif %}
+    <div class="alert alert-success mt-3">
+        Congratulations, {{ user.username }}! You passed the exam with score {{ score }}/{{ total }}.
+    </div>
 
-  <h5 class="mt-3">Your Answers:</h5>
-  <ul class="list-group">
-    {% for choice in choices %}
-      <li class="list-group-item">
-        {{ choice.question.content }} —
-        <strong>{{ choice.content }}</strong>
+    <h5 class="mt-4">Your Answers:</h5>
 
-        {% if choice.is_correct %}
-          <span class="badge badge-success float-right">Correct</span>
-        {% else %}
-          <span class="badge badge-danger float-right">Wrong</span>
-        {% endif %}
-      </li>
-    {% empty %}
-      <li class="list-group-item">No answers submitted.</li>
+    {% for question in course.question_set.all %}
+    <div class="card mt-2 p-3">
+        <h6>{{ question.content }}</h6>
+
+        {% for choice in choices %}
+            {% if choice.question == question %}
+                {% if choice.is_correct %}
+                    <div class="text-success">✔ Correct answer: {{ choice.content }}</div>
+                {% else %}
+                    <div class="text-danger">✖ Your answer: {{ choice.content }}</div>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+    </div>
     {% endfor %}
-  </ul>
 
-  <div class="mt-3">
-    <a href="{% url 'onlinecourse:index' %}" class="btn btn-primary">
-      Back to Courses
+    <a class="btn btn-primary mt-4" href="{% url 'onlinecourse:index' %}">
+        Back to Courses
     </a>
-  </div>
 
 </div>
-{% endblock %}
+
+</body>
+</html>

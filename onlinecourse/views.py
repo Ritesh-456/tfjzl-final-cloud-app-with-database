@@ -12,7 +12,7 @@ from .models import Course, Enrollment, Question, Choice, Submission
 logger = logging.getLogger(__name__)
 
 # ===========================
-# AUTH VIEWS (keep as-is)
+# AUTH VIEWS
 # ===========================
 
 def registration_request(request):
@@ -83,9 +83,11 @@ class CourseListView(generic.ListView):
     def get_queryset(self):
         user = self.request.user
         courses = Course.objects.order_by('-total_enrollment')[:10]
+
         for course in courses:
             if user.is_authenticated:
                 course.is_enrolled = check_if_enrolled(user, course)
+
         return courses
 
 
@@ -109,7 +111,7 @@ def enroll(request, course_id):
 
 
 # ===========================
-# TASK 5 — EXAM LOGIC (NEW)
+# TASK 5 — EXAM LOGIC (FIXED)
 # ===========================
 
 def extract_answers(request):
@@ -142,23 +144,26 @@ def submit(request, course_id):
 
 def show_exam_result(request, course_id, submission_id):
     course = get_object_or_404(Course, pk=course_id)
-    submission = Submission.objects.get(id=submission_id)
+    submission = get_object_or_404(Submission, id=submission_id)
+
     choices = submission.choices.all()
 
-    total_score = 0
-    questions = course.question_set.all()
+    total_questions = course.question_set.count()
+    correct_answers = 0
 
-    for question in questions:
-        correct_choices = question.choice_set.filter(is_correct=True)
-        selected_choices = choices.filter(question=question)
+    for choice in choices:
+        if choice.is_correct:
+            correct_answers += 1
 
-        if set(correct_choices) == set(selected_choices):
-            total_score += question.grade
+    score = correct_answers
+    total = total_questions
 
     context = {
-        'course': course,
-        'grade': total_score,
-        'choices': choices,
+        "course": course,
+        "submission": submission,
+        "choices": choices,
+        "score": score,
+        "total": total,
     }
 
-    return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
+    return render(request, "onlinecourse/exam_result_bootstrap.html", context)
